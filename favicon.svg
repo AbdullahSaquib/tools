@@ -1,0 +1,13 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="128" fill="#1E293B"/>
+  
+  <path d="M180 160C140 160 130 170 130 210V240C130 256 120 256 100 256C120 256 130 256 130 272V302C130 342 140 352 180 352" 
+        stroke="#38BDF8" stroke-width="32" stroke-linecap="round"/>
+  
+  <path d="M332 160C372 160 382 170 382 210V240C382 256 392 256 412 256C392 256 382 256 382 272V302C382 342 372 352 332 352" 
+        stroke="#38BDF8" stroke-width="32" stroke-linecap="round"/>
+        
+  <rect x="236" y="236" width="40" height="40" rx="8" fill="#FBBF24">
+    <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite" />
+  </rect>
+</svg>

@@ -4,7 +4,8 @@
     "owner": "Abdullah Saquib",
     "branding": "codecollider",
     "copyright_year": 2024,
-    "hosting_domain": "abdullahsaquib.com"
+    "hosting_domain": "abdullahsaquib.com",
+    "favicon": "/favicon.svg"
   },
   "technical_stack": {
     "frameworks": [
