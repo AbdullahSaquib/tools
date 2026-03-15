@@ -1,0 +1,80 @@
+{
+  "project_details": {
+    "site_name": "tools.abdullahsaquib.com",
+    "owner": "Abdullah Saquib",
+    "branding": "codecollider",
+    "copyright_year": 2024,
+    "hosting_domain": "abdullahsaquib.com"
+  },
+  "technical_stack": {
+    "frameworks": [
+      "Tailwind CSS (via CDN)"
+    ],
+    "typography": [
+      "Inter (Google Fonts)"
+    ],
+    "iconography": [
+      "Font Awesome 6.4.0"
+    ],
+    "privacy_model": "Client-side processing (no server-side data storage/collection)"
+  },
+  "tool_directory": [
+    {
+      "name": "JSON Formatter",
+      "category": "Developer Utilities",
+      "function": "Clean, format, and validate JSON data",
+      "slug": "/json-formatter",
+      "status": "New"
+    },
+    {
+      "name": "Base64 Converter",
+      "category": "Converters",
+      "function": "Encode/decode text or images to Base64 strings",
+      "slug": "/base64-converter"
+    },
+    {
+      "name": "JWT Decoder",
+      "category": "Developer Utilities",
+      "function": "Decode and inspect JSON Web Token payloads",
+      "slug": "/jwt-decoder"
+    },
+    {
+      "name": "Password Generator",
+      "category": "Generators",
+      "function": "Create cryptographically strong random passwords",
+      "slug": "/password-gen"
+    },
+    {
+      "name": "UUID Generator",
+      "category": "Generators",
+      "function": "Generate version 4 UUIDs (GUIDs)",
+      "slug": "/uuid-gen"
+    },
+    {
+      "name": "Lorem Ipsum",
+      "category": "Generators",
+      "function": "Generate placeholder text for mockups",
+      "slug": "/lorem-ipsum"
+    }
+  ],
+  "ui_features": {
+    "search": "Real-time client-side filtering with empty state handling",
+    "navigation": [
+      "Sticky sidebar with scroll-spy active state highlighting",
+      "Responsive mobile-friendly layout",
+      "Smooth scroll behavior"
+    ],
+    "interactive_elements": [
+      "Cubic-bezier tool card hover transitions",
+      "Gradient text effects",
+      "Tool request email integration"
+    ]
+  },
+  "social_profiles": {
+    "email": "codecollider@outlook.com",
+    "github": "AbdullahSaquib",
+    "twitter_x": "codecollider",
+    "linkedin": "abdullah-saquib",
+    "youtube": "@codecollider"
+  }
+}

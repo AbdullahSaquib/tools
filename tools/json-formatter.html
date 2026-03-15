@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Formatter & Validator - tools.abdullahsaquib.com</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+            overflow-x: hidden;
+        }
+
+        .code-font {
+            font-family: 'Fira Code', monospace;
+            line-height: 1.5rem;
+            font-size: 0.875rem;
+        }
+
+        .editor-container {
+            height: calc(100vh - 320px);
+            min-height: 500px;
+        }
+
+        /* Syntax Highlighting Colors */
+        .json-key { color: #a855f7; font-weight: 600; }
+        .json-string { color: #10b981; }
+        .json-number { color: #f59e0b; }
+        .json-boolean { color: #3b82f6; font-weight: 500;}
+        .json-null { color: #ef4444; font-weight: 500;}
+
+        /* Input Editor Specifics */
+        .editor-wrapper {
+            position: relative;
+            display: flex;
+            background: white;
+            overflow: hidden;
+        }
+
+        .line-numbers-gutter {
+            width: 3.5rem;
+            background-color: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+            color: #cbd5e1;
+            text-align: right;
+            padding-right: 1.25rem;
+            font-size: 0.75rem;
+            user-select: none;
+            flex-shrink: 0;
+            overflow: hidden;
+            padding-top: 1.5rem;
+        }
+
+        .gutter-num {
+            height: 1.5rem;
+            display: block;
+        }
+
+        .input-area-container {
+            position: relative;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        #jsonInput, #inputHighlight {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 1.5rem;
+            margin: 0;
+            border: none;
+            white-space: pre;
+            word-wrap: normal;
+            overflow: auto;
+            background: transparent;
+        }
+
+        #jsonInput {
+            color: transparent;
+            caret-color: #1e293b;
+            z-index: 2;
+            resize: none;
+            outline: none;
+        }
+
+        #inputHighlight {
+            z-index: 1;
+            pointer-events: none;
+            color: #475569;
+        }
+
+        /* Output View */
+        #jsonOutput {
+            counter-reset: line;
+            white-space: pre;
+            padding: 1.5rem 0;
+            background-color: #f8fafc;
+        }
+
+        .line-row {
+            display: block;
+            line-height: 1.5rem;
+            min-height: 1.5rem;
+            padding-left: 4.8rem;
+            position: relative;
+            white-space: pre;
+        }
+
+        .line-row::before {
+            counter-increment: line;
+            content: counter(line);
+            position: absolute;
+            left: 0;
+            width: 4.5rem;
+            text-align: left;
+            padding-left: 0.75rem;
+            color: #cbd5e1;
+            font-size: 0.75rem;
+            user-select: none;
+            border-right: 1px solid #e2e8f0;
+            background-color: #f8fafc;
+            height: 100%;
+            z-index: 5;
+        }
+
+        .collapsible-icon {
+            cursor: pointer;
+            width: 1.2rem;
+            height: 1.5rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+            color: #94a3b8;
+            font-size: 0.65rem;
+            user-select: none;
+            position: absolute;
+            left: 3.1rem;
+            z-index: 10;
+        }
+        
+        .collapsible-icon:hover { color: #3b82f6; }
+        .collapsed > .line-row .collapsible-icon { transform: rotate(-90deg); }
+        .collapsed > .collapsed-content { display: none; }
+        
+        .collapsed-placeholder {
+            display: none;
+            color: #94a3b8;
+            font-style: italic;
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 0 4px;
+            user-select: none;
+        }
+        .collapsed > .line-row .collapsed-placeholder { display: inline; }
+
+        .maximized {
+            position: fixed !important;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 100;
+            height: 100vh !important;
+            width: 100vw !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+        }
+        .maximized .editor-container { height: calc(100vh - 120px) !important; }
+
+        .btn-toggle-active {
+            background-color: #2563eb !important;
+            color: white !important;
+            border-color: #1e40af !important;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Article Styling */
+        .article-section h2 { border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem; margin-top: 2.5rem; }
+        .lang-table td { padding: 0.75rem; border-bottom: 1px solid #f3f4f6; }
+        .lang-table tr:last-child td { border-bottom: none; }
+        .code-snippet { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 2px 6px; font-family: 'Fira Code', monospace; font-size: 0.85rem; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center">
+                    <a href="#" class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                        tools.abdullahsaquib.com
+                    </a>
+                </div>
+                <div class="flex items-baseline space-x-4">
+                    <a href="#" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                    <a href="#" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">All Tools</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <header class="bg-white border-b border-gray-100 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">JSON Formatter & Stylist</h1>
+                    <p class="text-sm text-gray-500">Professional editor with real-time syntax highlighting.</p>
+                </div>
+                <div id="statusIndicator" class="hidden items-center px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider">
+                    <span id="statusIcon" class="mr-2"></span>
+                    <span id="statusText"></span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 relative">
+            <!-- INPUT PANEL -->
+            <div id="inputWrapper" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col transition-all duration-300">
+                <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex justify-between items-center">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Input</span>
+                    <div class="flex gap-1">
+                        <button onclick="copy('input', event)" title="Copy Input" class="p-2 text-gray-500 hover:text-blue-600 transition"><i class="fas fa-copy"></i></button>
+                        <button onclick="toggleMaximize('inputWrapper')" title="Maximize" class="p-2 text-gray-500 hover:text-blue-600 transition"><i class="fas fa-expand-alt"></i></button>
+                    </div>
+                </div>
+                <div class="editor-wrapper editor-container">
+                    <div id="inputGutter" class="line-numbers-gutter code-font"></div>
+                    <div class="input-area-container">
+                        <div id="inputHighlight" class="code-font"></div>
+                        <textarea id="jsonInput" spellcheck="false" class="code-font" placeholder='Paste raw JSON here...'></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OUTPUT PANEL -->
+            <div id="outputWrapper" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col transition-all duration-300">
+                <div class="bg-gray-50 px-4 py-2 border-b border-gray-200 flex flex-wrap justify-between items-center gap-2">
+                    <div class="flex items-center gap-4">
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Output</span>
+                        <div class="flex items-center gap-2 text-xs text-gray-500">
+                            <label for="indentSize">Indentation:</label>
+                            <div class="flex items-center gap-1">
+                                <select id="indentSize" onchange="handleIndentChange()" class="bg-white border border-gray-300 rounded px-1 py-0.5 focus:outline-none">
+                                    <option value="2">2 Spaces</option>
+                                    <option value="4" selected>4 Spaces</option>
+                                    <option value="tab">Tabs</option>
+                                    <option value="custom">Custom...</option>
+                                </select>
+                                <input type="number" id="customIndent" value="3" min="1" max="10" oninput="processJson()" 
+                                    class="hidden w-12 bg-white border border-gray-300 rounded px-1 py-0.5 focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 items-center">
+                        <button id="minifyBtn" onclick="toggleMinify()" title="Minify Toggle" class="px-2 py-1 text-xs font-bold text-gray-600 hover:bg-gray-200 rounded transition border border-gray-300 mr-2">MINIFY</button>
+                        <button onclick="downloadJson()" title="Download" class="p-2 text-gray-500 hover:text-blue-600 transition"><i class="fas fa-download"></i></button>
+                        <button onclick="copy('output', event)" title="Copy Output" class="p-2 text-gray-500 hover:text-blue-600 transition"><i class="fas fa-copy"></i></button>
+                        <button onclick="toggleMaximize('outputWrapper')" title="Maximize" class="p-2 text-gray-500 hover:text-blue-600 transition"><i class="fas fa-expand-alt"></i></button>
+                    </div>
+                </div>
+                <div id="jsonOutput" class="w-full editor-container code-font text-sm text-gray-800 overflow-auto bg-slate-50"></div>
+            </div>
+        </div>
+
+        <div id="errorBox" class="hidden mt-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+            <div class="flex">
+                <i class="fas fa-exclamation-triangle text-red-500 mt-1 mr-3"></i>
+                <div>
+                    <h3 class="text-sm font-bold text-red-800 uppercase tracking-tight">Syntax Error</h3>
+                    <p id="errorMessage" class="text-sm text-red-700 mt-1 code-font"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ARTICLE SECTION -->
+        <article class="mt-16 max-w-4xl mx-auto text-gray-800 leading-relaxed article-section">
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">JSON Formatter & Validator</h1>
+            <p class="text-lg text-gray-600 mb-6">Real-time tools for parsing, beautifying, and minifying JSON data.</p>
+            
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-8">
+                <p class="text-sm text-blue-700 font-medium">
+                    Status: <span id="articleStatus">Waiting for input...</span>
+                </p>
+            </div>
+
+            <section class="mb-10">
+                <h2 class="text-xl font-bold text-gray-900 mb-3">What is JSON?</h2>
+                <p class="mb-4">
+                    JSON (<strong>JavaScript Object Notation</strong>) is a lightweight data-interchange format. It is easy for humans to read and write and easy for machines to parse and generate. It is based on a subset of the JavaScript Programming Language Standard ECMA-262 3rd Edition - December 1999. 
+                </p>
+                <p class="mb-4">
+                    JSON is a text format that is completely language independent but uses conventions that are familiar to programmers of the C-family of languages, including C, C++, C#, Java, JavaScript, Perl, Python, and many others. These properties make JSON an ideal data-interchange language.
+                </p>
+            </section>
+
+            <section class="mb-10">
+                <h2 class="text-xl font-bold text-gray-900 mb-3">JSON Structure</h2>
+                <p class="mb-4">JSON is built on two structures:</p>
+                <ul class="list-disc ml-6 mb-4 space-y-2">
+                    <li><strong>An object:</strong> A collection of name/value pairs. In various languages, this is realized as an object, record, struct, dictionary, hash table, keyed list, or associative array.</li>
+                    <li><strong>An array:</strong> An ordered list of values. In most languages, this is realized as an array, vector, list, or sequence.</li>
+                </ul>
+                <p>A value can be a <em>string</em> in double quotes, a <em>number</em>, <em>true</em>, <em>false</em>, <em>null</em>, an <em>object</em>, or an <em>array</em>. These structures can be nested.</p>
+            </section>
+
+            <section class="mb-10">
+                <h2 class="text-xl font-bold text-gray-900 mb-3">Code Examples</h2>
+                <p class="mb-6">How to parse and stringify JSON in various programming languages. The first line usually shows how to convert a string to an object (Parse), while the second shows converting an object back to a formatted string (Beautify).</p>
+                
+                <div class="overflow-hidden border border-gray-200 rounded-lg">
+                    <table class="w-full text-sm text-left lang-table bg-white">
+                        <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
+                            <tr>
+                                <th class="p-3">Language</th>
+                                <th class="p-3">Implementation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="font-bold w-32">JavaScript</td>
+                                <td>
+                                    <div class="mb-1"><span class="code-snippet">JSON.parse(dataStr)</span></div>
+                                    <div><span class="code-snippet">JSON.stringify(obj, null, 4)</span></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Python</td>
+                                <td>
+                                    <div class="mb-1"><span class="code-snippet">import json; json.loads(data_str)</span></div>
+                                    <div><span class="code-snippet">json.dumps(obj, indent=4)</span></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">PHP</td>
+                                <td>
+                                    <div class="mb-1"><span class="code-snippet">json_decode($data_str);</span></div>
+                                    <div><span class="code-snippet">json_encode($obj, JSON_PRETTY_PRINT);</span></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Java (Jackson)</td>
+                                <td>
+                                    <div class="mb-1"><span class="code-snippet">new ObjectMapper().readTree(jsonStr);</span></div>
+                                    <div><span class="code-snippet">writerWithDefaultPrettyPrinter().writeValueAsString(obj);</span></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">C#</td>
+                                <td>
+                                    <div class="mb-1"><span class="code-snippet">JsonSerializer.Deserialize&lt;T&gt;(jsonString);</span></div>
+                                    <div><span class="code-snippet">JsonSerializer.Serialize(obj, new JsonSerializerOptions { WriteIndented = true });</span></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Go</td>
+                                <td>
+                                    <div class="mb-1"><span class="code-snippet">json.Unmarshal(data, &v)</span></div>
+                                    <div><span class="code-snippet">json.MarshalIndent(v, "", "    ")</span></div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">Ruby</td>
+                                <td>
+                                    <div class="mb-1"><span class="code-snippet">JSON.parse(str)</span></div>
+                                    <div><span class="code-snippet">JSON.pretty_generate(obj)</span></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="mb-16">
+                <h2 class="text-xl font-bold text-gray-900 mb-3">Why use this tool?</h2>
+                <p class="mb-4">
+                    Debugging raw JSON strings from API responses or log files can be difficult when they are minified into a single line. This tool helps by:
+                </p>
+                <ul class="list-disc ml-6 space-y-2">
+                    <li><strong>Validating:</strong> Instantly catch missing commas, trailing commas, or unquoted keys.</li>
+                    <li><strong>Formatting:</strong> Converts "ugly" JSON into a readable, tree-like structure with adjustable indentation.</li>
+                    <li><strong>Collapsing:</strong> Large objects or arrays can be collapsed to focus on the data you need.</li>
+                    <li><strong>Minifying:</strong> Compress your JSON for production use to save bandwidth.</li>
+                </ul>
+            </section>
+        </article>
+    </main>
+
+    <footer class="bg-gray-900 text-white py-8 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-gray-400 text-xs tracking-widest uppercase mb-2">© 2024 Abdullah Saquib • tools.abdullahsaquib.com</p>
+            <div class="flex justify-center space-x-4 text-gray-500 text-sm">
+                <a href="#" class="hover:text-white transition">Privacy</a>
+                <a href="#" class="hover:text-white transition">Terms</a>
+                <a href="#" class="hover:text-white transition">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const input = document.getElementById('jsonInput');
+        const inputHighlight = document.getElementById('inputHighlight');
+        const inputGutter = document.getElementById('inputGutter');
+        const output = document.getElementById('jsonOutput');
+        const errorBox = document.getElementById('errorBox');
+        const errorMessage = document.getElementById('errorMessage');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusIcon = document.getElementById('statusIcon');
+        const statusText = document.getElementById('statusText');
+        const articleStatus = document.getElementById('articleStatus');
+        const indentSelect = document.getElementById('indentSize');
+        const customIndentInput = document.getElementById('customIndent');
+        const minifyBtn = document.getElementById('minifyBtn');
+
+        let isMinified = false;
+
+        function applySyntaxHighlight(text) {
+            if (!text) return "";
+            return text
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, match => {
+                    let cls = 'json-number';
+                    if (/^"/.test(match)) {
+                        if (/:$/.test(match)) cls = 'json-key';
+                        else cls = 'json-string';
+                    } else if (/true|false/.test(match)) {
+                        cls = 'json-boolean';
+                    } else if (/null/.test(match)) {
+                        cls = 'json-null';
+                    }
+                    return `<span class="${cls}">${match}</span>`;
+                });
+        }
+
+        function updateInputDisplay() {
+            const text = input.value;
+            const lines = text.split('\n');
+            const lineCount = lines.length || 1;
+            let gutterHtml = '';
+            for (let i = 1; i <= lineCount; i++) {
+                gutterHtml += `<span class="gutter-num">${i}</span>`;
+            }
+            inputGutter.innerHTML = gutterHtml;
+            inputHighlight.innerHTML = applySyntaxHighlight(text) + (text.endsWith('\n') ? '\n ' : '');
+            syncScroll();
+        }
+
+        function syncScroll() {
+            inputGutter.scrollTop = input.scrollTop;
+            inputHighlight.scrollTop = input.scrollTop;
+            inputHighlight.scrollLeft = input.scrollLeft;
+        }
+
+        function syntaxHighlightValue(val) {
+            if (typeof val === 'string') {
+                val = val.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return `<span class="json-string">"${val}"</span>`;
+            }
+            if (typeof val === 'number') return `<span class="json-number">${val}</span>`;
+            if (typeof val === 'boolean') return `<span class="json-boolean">${val}</span>`;
+            if (val === null) return `<span class="json-null">null</span>`;
+            return val;
+        }
+
+        function createLineElement(content, indentLevel = 0, hasIcon = false) {
+            const row = document.createElement('div');
+            row.className = 'line-row';
+            
+            let indentStr = "";
+            const type = indentSelect.value;
+            if (type === 'tab') {
+                indentStr = "\t".repeat(indentLevel);
+            } else {
+                const spaces = type === 'custom' ? parseInt(customIndentInput.value) : parseInt(type);
+                indentStr = " ".repeat(spaces * indentLevel);
+            }
+
+            let iconHtml = '';
+            if (hasIcon) {
+                iconHtml = `<span class="collapsible-icon" onclick="event.stopPropagation(); this.closest('.collapsible-group').classList.toggle('collapsed')"><i class="fas fa-chevron-down"></i></span>`;
+            }
+
+            row.innerHTML = `${iconHtml}${indentStr}${content}`;
+            return row;
+        }
+
+        function buildTree(obj, isLast = true, key = null, level = 0) {
+            const container = document.createElement('div');
+            container.className = 'collapsible-group';
+            
+            const isArray = Array.isArray(obj);
+            const startChar = isArray ? '[' : '{';
+            const endChar = isArray ? ']' : '}';
+            const entries = Object.entries(obj);
+            const hasChildren = entries.length > 0;
+            const suffix = isLast ? "" : ",";
+            
+            const keyLabel = key !== null ? `<span class="json-key">"${key}"</span>: ` : "";
+            const headerHtml = `${keyLabel}${startChar}<span class="collapsed-placeholder">...</span>`;
+            
+            container.appendChild(createLineElement(headerHtml, level, hasChildren));
+
+            if (hasChildren) {
+                const body = document.createElement('div');
+                body.className = 'collapsed-content';
+                
+                entries.forEach(([k, v], index) => {
+                    const lastChild = index === entries.length - 1;
+                    const childSuffix = lastChild ? "" : ",";
+                    
+                    if (v !== null && typeof v === 'object') {
+                        body.appendChild(buildTree(v, lastChild, isArray ? null : k, level + 1));
+                    } else {
+                        const rowKey = isArray ? "" : `<span class="json-key">"${k}"</span>: `;
+                        const rowContent = `${rowKey}${syntaxHighlightValue(v)}${childSuffix}`;
+                        body.appendChild(createLineElement(rowContent, level + 1));
+                    }
+                });
+                container.appendChild(body);
+            }
+
+            container.appendChild(createLineElement(`${endChar}${suffix}`, level));
+            return container;
+        }
+
+        function getFormattedJSON() {
+            const rawValue = input.value.trim();
+            if (!rawValue) return "";
+            try {
+                const parsed = JSON.parse(rawValue);
+                if (isMinified) return JSON.stringify(parsed);
+                let space = 4;
+                const type = indentSelect.value;
+                if (type === 'tab') space = '\t';
+                else if (type === 'custom') space = parseInt(customIndentInput.value) || 4;
+                else space = parseInt(type);
+                return JSON.stringify(parsed, null, space);
+            } catch (e) {
+                return rawValue;
+            }
+        }
+
+        function processJson() {
+            const rawValue = input.value.trim();
+            output.innerHTML = "";
+            updateInputDisplay();
+            if (!rawValue) {
+                statusIndicator.classList.add('hidden');
+                errorBox.classList.add('hidden');
+                articleStatus.innerText = "Waiting for input...";
+                return;
+            }
+            try {
+                const parsed = JSON.parse(rawValue);
+                if (isMinified) {
+                    const minified = JSON.stringify(parsed);
+                    const highlighted = applySyntaxHighlight(minified);
+                    const row = document.createElement('div');
+                    row.className = 'line-row';
+                    row.innerHTML = highlighted;
+                    output.appendChild(row);
+                } else {
+                    output.appendChild(buildTree(parsed));
+                }
+                statusIndicator.className = "flex items-center px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-green-100 text-green-700";
+                statusIcon.innerHTML = '<i class="fas fa-check-circle"></i>';
+                statusText.innerText = 'Valid JSON';
+                articleStatus.innerText = "Current JSON is valid and parsed successfully.";
+                statusIndicator.classList.remove('hidden');
+                errorBox.classList.add('hidden');
+            } catch (e) {
+                statusIndicator.className = "flex items-center px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-red-100 text-red-700";
+                statusIcon.innerHTML = '<i class="fas fa-times-circle"></i>';
+                statusText.innerText = 'Invalid JSON';
+                articleStatus.innerText = "Error: " + e.message;
+                statusIndicator.classList.remove('hidden');
+                errorBox.classList.remove('hidden');
+                errorMessage.innerText = e.message;
+            }
+        }
+
+        function handleIndentChange() {
+            if (indentSelect.value === 'custom') {
+                customIndentInput.classList.remove('hidden');
+            } else {
+                customIndentInput.classList.add('hidden');
+            }
+            processJson();
+        }
+
+        function toggleMinify() {
+            isMinified = !isMinified;
+            if (isMinified) {
+                minifyBtn.classList.add('btn-toggle-active');
+                minifyBtn.innerText = 'FORMATTED';
+            } else {
+                minifyBtn.classList.remove('btn-toggle-active');
+                minifyBtn.innerText = 'MINIFY';
+            }
+            processJson();
+        }
+
+        function toggleMaximize(id) {
+            const element = document.getElementById(id);
+            element.classList.toggle('maximized');
+            const icon = element.querySelector('.fa-expand-alt, .fa-compress-alt');
+            if (element.classList.contains('maximized')) {
+                icon.classList.replace('fa-expand-alt', 'fa-compress-alt');
+                document.body.style.overflow = 'hidden';
+            } else {
+                icon.classList.replace('fa-compress-alt', 'fa-expand-alt');
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        function copy(type, event) {
+            let text = "";
+            if (type === 'input') {
+                text = input.value;
+            } else {
+                text = getFormattedJSON();
+            }
+            if (!text) return;
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            const btn = event.currentTarget;
+            const icon = btn.querySelector('i');
+            const originalClass = icon.className;
+            icon.className = 'fas fa-check text-green-500';
+            setTimeout(() => { icon.className = originalClass; }, 2000);
+        }
+
+        function downloadJson() {
+            const text = getFormattedJSON();
+            if (!text) return;
+            const blob = new Blob([text], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = isMinified ? "minified.json" : "formatted.json";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        input.addEventListener('input', processJson);
+        input.addEventListener('scroll', syncScroll);
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                this.value = this.value.substring(0, start) + "    " + this.value.substring(this.selectionEnd);
+                this.selectionStart = this.selectionEnd = start + 4;
+                processJson();
+            }
+        });
+
+        updateInputDisplay();
+    </script>
+</body>
+</html>
