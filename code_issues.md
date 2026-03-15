@@ -1,0 +1,1 @@
+The links in individual tools pages to home page and all tools page are sometimes not working, they must be / and /all-tools
